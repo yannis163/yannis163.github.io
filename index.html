@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>北京时间 ↔ 华盛顿 DC 时间转换器</title>
+<style>
+:root{--bg:#f4f7fb;--card:#fff;--text:#182230;--muted:#65748b;--blue:#4667c9;--teal:#16877d;--border:#dce4ef}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;padding:24px 14px}
+main{max-width:900px;margin:auto}.top{text-align:center;margin:8px 0 24px}.top h1{font-size:26px;margin:0 0 8px}.top p{color:var(--muted);margin:0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:22px;box-shadow:0 5px 20px #172c4510}.clock-label{font-size:18px;font-weight:700}.clock{font-size:clamp(28px,5vw,44px);font-weight:750;letter-spacing:1px;margin:12px 0 8px;white-space:nowrap}.date{font-size:16px}.zone{font-size:13px;color:var(--muted);margin-top:7px}.cn{color:var(--teal)}.dc{color:var(--blue)}.section{margin-top:24px}.section h2{font-size:20px;margin:0 0 14px}.convert{display:grid;grid-template-columns:1fr 1fr;gap:16px}.field label{display:block;font-weight:650;margin-bottom:8px}.field input{width:100%;font-size:17px;padding:12px;border:1px solid var(--border);border-radius:10px;background:white;color:var(--text)}.field .hint{color:var(--muted);font-size:13px;margin-top:8px;min-height:38px;line-height:1.55}.note{color:var(--muted);font-size:13px;line-height:1.6;margin-top:14px}.footer{text-align:center;color:var(--muted);font-size:12px;margin-top:20px}
+@media(max-width:650px){.grid,.convert{grid-template-columns:1fr}.card{padding:18px}.top h1{font-size:22px}}
+</style>
+</head>
+<body><main>
+<header class="top"><h1>北京时间 ↔ 华盛顿 DC 时间</h1><p>实时双时钟 · 双向时间转换 · 自动识别夏令时</p></header>
+<div class="grid">
+<section class="card"><div class="clock-label cn">🇨🇳 北京时间</div><div id="beijingClock" class="clock cn">--:--:--</div><div id="beijingDate" class="date">--</div><div class="zone">中国标准时间 · UTC+8</div></section>
+<section class="card"><div class="clock-label dc">🇺🇸 Washington, DC</div><div id="dcClock" class="clock dc">--:--:--</div><div id="dcDate" class="date">--</div><div id="dcZone" class="zone">--</div></section>
+</div>
+<section class="section card"><h2>双向时间转换</h2><div class="convert">
+<div class="field"><label for="beijingInput" class="cn">🇨🇳 输入北京时间</label><input type="datetime-local" id="beijingInput" step="1"><div class="hint" id="beijingHint">选择日期和时间，自动显示对应华盛顿 DC 时间、星期及时区</div></div>
+<div class="field"><label for="dcInput" class="dc">🇺🇸 输入华盛顿 DC 时间</label><input type="datetime-local" id="dcInput" step="1"><div class="hint" id="dcHint">选择日期和时间，自动显示对应北京时间、星期</div></div>
+</div><div class="note">输入任意一侧的日期和时间，另一侧会自动转换。转换结果下方会显示星期几及对应时区信息。转换按北京时间（Asia/Shanghai）和华盛顿 DC（America/New_York）时区计算，自动考虑美国夏令时/冬令时。美国夏令时切换时可能存在不存在或重复的当地时间，系统会按常规时区规则处理。</div></section>
+<div class="footer">实时钟依据设备系统时钟。请确保设备日期和时间设置准确。</div>
+</main>
+<script>
+const ZCN='Asia/Shanghai', ZDC='America/New_York';
+function formatter(zone,opts){return new Intl.DateTimeFormat('zh-CN',{timeZone:zone,...opts})}
+function updateClocks(){const now=new Date();document.getElementById('beijingClock').textContent=formatter(ZCN,{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(now);document.getElementById('beijingDate').textContent=formatter(ZCN,{year:'numeric',month:'long',day:'numeric',weekday:'long'}).format(now);document.getElementById('dcClock').textContent=formatter(ZDC,{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(now);document.getElementById('dcDate').textContent=formatter(ZDC,{year:'numeric',month:'long',day:'numeric',weekday:'long'}).format(now);document.getElementById('dcZone').textContent=formatter(ZDC,{timeZoneName:'long'}).format(now).split(' ').pop()+' · '+offsetLabel(now,ZDC)}
+function parts(date,zone){const p=formatter(zone,{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(date);let o={};p.forEach(x=>{if(x.type!=='literal')o[x.type]=x.value});return o}
+function offsetLabel(date,zone){const p=parts(date,zone);const localAsUTC=Date.UTC(+p.year,+p.month-1,+p.day,+p.hour,+p.minute,+p.second);let mins=Math.round((localAsUTC-date.getTime())/60000);let sign=mins>=0?'+':'-';mins=Math.abs(mins);return 'UTC'+sign+String(Math.floor(mins/60)).padStart(2,'0')+(mins%60?':'+String(mins%60).padStart(2,'0'):'')}
+function parseWall(s){if(!s)return null;let m=s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/);if(!m)return null;return {y:+m[1],mo:+m[2],d:+m[3],h:+m[4],mi:+m[5],se:+(m[6]||0)}}
+function wallToUTC(w,zone){if(!w)return null;let guess=Date.UTC(w.y,w.mo-1,w.d,w.h,w.mi,w.se);const desired=Date.UTC(w.y,w.mo-1,w.d,w.h,w.mi,w.se);for(let i=0;i<6;i++){let p=parts(new Date(guess),zone);let represented=Date.UTC(+p.year,+p.month-1,+p.day,+p.hour,+p.minute,+p.second);guess+=desired-represented;}return new Date(guess)}
+function utcToWallString(date,zone){let p=parts(date,zone);return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}:${p.second}`}
+function weekdayText(date,zone){return formatter(zone,{weekday:'long'}).format(date)}
+function detailedText(date,zone){return weekdayText(date,zone)+' · '+(zone===ZDC?formatter(ZDC,{timeZoneName:'long'}).format(date).split(' ').pop()+' · '+offsetLabel(date,ZDC):'中国标准时间 · UTC+08:00')}
+function convertFrom(which){let source=which==='cn'?document.getElementById('beijingInput'):document.getElementById('dcInput');let dest=which==='cn'?document.getElementById('dcInput'):document.getElementById('beijingInput');let hint=which==='cn'?document.getElementById('dcHint'):document.getElementById('beijingHint');let sourceHint=which==='cn'?document.getElementById('beijingHint'):document.getElementById('dcHint');let w=parseWall(source.value);if(!w){dest.value='';hint.textContent=which==='cn'?'选择日期和时间，自动显示对应华盛顿 DC 时间、星期及时区':'选择日期和时间，自动显示对应北京时间、星期';sourceHint.textContent=which==='cn'?'输入北京时间':'输入华盛顿 DC 时间';return;}let sourceZone=which==='cn'?ZCN:ZDC;let destZone=which==='cn'?ZDC:ZCN;let dt=wallToUTC(w,sourceZone);dest.value=utcToWallString(dt,destZone);sourceHint.textContent='输入时间 · '+detailedText(dt,sourceZone);hint.textContent='转换结果 · '+detailedText(dt,destZone);}
+document.getElementById('beijingInput').addEventListener('input',()=>convertFrom('cn'));document.getElementById('dcInput').addEventListener('input',()=>convertFrom('dc'));updateClocks();setInterval(updateClocks,1000);
+</script></body></html>
